@@ -101,3 +101,47 @@ modified:   sentinel-dashboard/src/main/java/com/alibaba/csp/sentinel/dashboard/
 modified:   sentinel-dashboard/src/main/java/com/alibaba/csp/sentinel/dashboard/rule/redis/system/SystemRuleRedisPublisher.java
 modified:   sentinel-dashboard/src/main/resources/application.properties
 ```
+
+## 5. 多环境启动（对接 kimigoshop-tms）
+
+本项目已与 kimigoshop-tms 的 Redis 规则源约定对齐：
+
+- ruleKey：`sentinel:rules:{app}:{group}:{flow|degrade|param-flow}`
+- channel：`sentinel:channel:{app}:{group}:{flow|degrade|param-flow}`（SET 后 PUBLISH 任意消息触发客户端刷新）
+- 分组由 `sentinel.rule.group` 控制（默认 default，可用环境变量 `SENTINEL_RULE_GROUP` 覆盖），
+  与 TMS 的 `tms.sentinel.rule.group` 保持一致。
+
+### 环境一览（application-{env}.properties）
+
+| 环境   | Redis                          | db | dashboard 端口 |
+|--------|--------------------------------|----|----------------|
+| dev    | 172.20.1.174:6379              | 1  | 8858           |
+| zrxdev | 172.20.1.174:6379              | 1  | 8859           |
+| test   | 81.68.223.190:32379（测试 Redis） | 1  | 8860           |
+| wms    | 192.168.110.254:6379（无密码）  | 1  | 8861           |
+| export | 192.168.110.254:6379（无密码）  | 1  | 8862           |
+| prod   | 仅环境变量注入，不设默认值      | 1  | 8863           |
+
+所有值均可用 `SENTINEL_RULE_REDIS_HOST / PORT / PASSWORD / DATABASE` 覆盖；
+端口用 `SENTINEL_DASHBOARD_PORT` 覆盖。多个环境可同时运行（端口互不相同）。
+
+### 启动
+
+```bash
+mvn clean package -DskipTests        # 先构建 target/sentinel-dashboard.jar
+
+./start.sh zrxdev                    # 启动 zrxdev 环境（端口 8859）
+./start.sh test                      # 启动 test 环境（端口 8860，连测试 Redis）
+SENTINEL_RULE_REDIS_HOST=81.68.223.190 SENTINEL_RULE_REDIS_PORT=32379 ./start.sh dev
+```
+
+账号/密码：sentinel / sentinel（`SENTINEL_DASHBOARD_USER/PASS` 可覆盖）。
+
+### 注意
+
+- 仅 flow / degrade / param-flow 三类规则写入 TMS 约定的 key；
+  system / authority / gateway / cluster 仍用本 fork 旧的 key（TMS 不消费）。
+- Dashboard 发布的 JSON 带 dashboard 内部字段（id/app/ip/port 等），
+  TMS 侧 SentinelRuleDataSourceConfig 的 ObjectMapper 已配置忽略未知字段。
+- 若 TMS 启动时用环境变量把规则 Redis 指向了测试 Redis，
+  dashboard 需同步用 `SENTINEL_RULE_REDIS_*` 指向同一实例（或直接用 test profile）。

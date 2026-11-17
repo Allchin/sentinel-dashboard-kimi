@@ -4,7 +4,7 @@ import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.ParamFlowRuleCo
 import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.ParamFlowRuleEntity;
 import com.alibaba.csp.sentinel.dashboard.rule.DynamicRuleProvider;
 import com.alibaba.csp.sentinel.dashboard.rule.redis.RedisUtil;
-import com.alibaba.csp.sentinel.dashboard.rule.redis.RuleConsts;
+import com.alibaba.csp.sentinel.dashboard.rule.redis.RuleKeys;
 import com.alibaba.csp.sentinel.slots.block.flow.param.ParamFlowRule;
 import com.alibaba.csp.sentinel.util.StringUtil;
 import com.alibaba.fastjson.JSONObject;
@@ -22,9 +22,12 @@ public class ParamFlowRuleRedisProvider implements DynamicRuleProvider<List<Para
     @Resource
     private RedisUtil redisUtil;
 
+    @Resource
+    private RuleKeys ruleKeys;
+
     @Override
     public List<ParamFlowRuleEntity> getRules(String appName) throws Exception {
-        String rules = redisUtil.getString(appName + ":" + RuleConsts.RULE_PARAM);
+        String rules = redisUtil.getString(ruleKeys.ruleKey(appName, RuleKeys.TYPE_PARAM_FLOW));
         if (StringUtil.isEmpty(rules)) {
             return new ArrayList<>();
         }

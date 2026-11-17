@@ -4,7 +4,7 @@ import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.ParamFlowRuleCo
 import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.ParamFlowRuleEntity;
 import com.alibaba.csp.sentinel.dashboard.rule.DynamicRulePublisher;
 import com.alibaba.csp.sentinel.dashboard.rule.redis.RedisUtil;
-import com.alibaba.csp.sentinel.dashboard.rule.redis.RuleConsts;
+import com.alibaba.csp.sentinel.dashboard.rule.redis.RuleKeys;
 import com.alibaba.fastjson.JSON;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
@@ -18,6 +18,9 @@ public class ParamFlowRuleRedisPublisher implements DynamicRulePublisher<List<Pa
 
     @Resource
     private RedisUtil redisUtil;
+
+    @Resource
+    private RuleKeys ruleKeys;
 
     @Override
     public void publish(String app, List<ParamFlowRuleEntity> rules) throws Exception {
@@ -35,6 +38,7 @@ public class ParamFlowRuleRedisPublisher implements DynamicRulePublisher<List<Pa
             BeanUtils.copyProperties(rule, entity);
             return entity;
         }).collect(Collectors.toList());
-        redisUtil.setString(app + ":" + RuleConsts.RULE_PARAM, JSON.toJSONString(list), RuleConsts.RULE_PARAM_CHANNEL);
+        redisUtil.setString(ruleKeys.ruleKey(app, RuleKeys.TYPE_PARAM_FLOW), JSON.toJSONString(list),
+                ruleKeys.channel(app, RuleKeys.TYPE_PARAM_FLOW));
     }
 }
