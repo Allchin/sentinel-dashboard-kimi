@@ -44,6 +44,7 @@ exec java \
   --add-opens java.base/sun.net.util=ALL-UNNAMED \
   -Dserver.port="$PORT" \
   -Dcsp.sentinel.dashboard.server=127.0.0.1:"$PORT" \
+  -Dcsp.sentinel.api.port=8739 \
   -Dproject.name=sentinel-dashboard \
   -Dsentinel.dashboard.auth.username="${SENTINEL_DASHBOARD_USER:-sentinel}" \
   -Dsentinel.dashboard.auth.password="${SENTINEL_DASHBOARD_PASS:-sentinel}" \
